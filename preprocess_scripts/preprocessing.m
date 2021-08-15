@@ -1,12 +1,12 @@
-% HUK_SD_VR Preprocessing
+% converting xdf file into set and fdt
 % Aug 2021 Version
 % Ziyi
-fPathIn= 'D:\dataset\HKU\VR&EEG_Plot\EEG\0_RawData';
-fPathOut= 'D:\dataset\HKU\VR&EEG_Plot\EEG\1_PreprocessedData';
+fPathIn= 'D:\dataset\HKU\VR&EEG_Plot\EEG\1_RawData';
+fPathOut= 'D:\dataset\HKU\VR&EEG_Plot\EEG\2_FilteredData';
 % declare input and output path
 
-fPathIn=fullfile('D:\dataset\HKU\VR&EEG_Plot\EEG\0_RawData');
-fileNames=dir(fullfile(fPathIn,'*.xdf'));
+fPathIn=fullfile('D:\dataset\HKU\VR&EEG_Plot\EEG\1_RawData');
+fileNames=dir(fullfile(fPathIn,'*.set'));
 % get names of datasets
 
 eeglab
@@ -25,30 +25,31 @@ for i = 1:length(fileNames)
   inFileName = fullfile(fPathIn, baseFileName);
   outFileName = fullfile(fPathOut, baseFileName);
   fprintf(1, 'Now reading %s\n', inFileName);
-  EEG = pop_loadxdf(inFileName , 'streamtype', 'EEG', 'exclude_markerstreams', {});
-  [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 0,'setname',baseFileName,'gui','off'); 
-  EEG = eeg_checkset( EEG );
-  % converting xdf files to set
   
-  EEG = pop_resample( EEG, 256);
-  % resampling to 256 Hz
+  
+  [ALLEEG EEG CURRENTSET ALLCOM] = eeglab;
+  EEG = pop_loadset('filename',inFileName,'filepath','D:\\dataset\\HKU\\VR&EEG_Plot\\EEG\\1_RawData\\');
+  [ALLEEG, EEG, CURRENTSET] = eeg_store( ALLEEG, EEG, 0 );
+  EEG = eeg_checkset( EEG );
   
   EEG=pop_chanedit(EEG, 'load',{'C:\\Users\\Administrator\\HKU_SD_VR\\preprocess_scripts\\smartinglocation.ced' 'filetype' 'autodetect'});
-  % read channel location file
-  % change file path needed
+  % import channel location
+  
+  EEG = pop_resample( EEG, 256);
+  % resampling dataset to 256 Hz
   
   EEG = pop_eegfiltnew(EEG, 'locutoff',1);
-  % high-pass filter
+  [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 1,'overwrite','on','gui','off'); 
+  % high pass filter 1 Hz
   
   EEG = pop_clean_rawdata(EEG, 'FlatlineCriterion',5,'ChannelCriterion',0.8,'LineNoiseCriterion',4,'Highpass','off','BurstCriterion',20,'WindowCriterion',0.25,'BurstRejection','on','Distance','Euclidian','WindowCriterionTolerances',[-Inf 7] );
   % apply clean_rawdata
   
   [ALLEEG EEG] = eeg_store(ALLEEG, EEG, CURRENTSET);
-  EEG = pop_saveset( EEG, 'filename',fileName,'filepath',fPathOut);
-  
-  eeglab redraw
+  EEG = pop_saveset( EEG, 'filename',fileName,'filepath','D:\\dataset\\HKU\\VR&EEG_Plot\\EEG\\2_FilteredData\\');
 end
     
+eeglab redraw
 
 
 
